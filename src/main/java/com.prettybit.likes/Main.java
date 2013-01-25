@@ -41,7 +41,10 @@ public class Main {
     public static void main(String[] args) throws IOException {
         loginToFacebook();
         for (Resource r : fetchResourcesFromLikeToCash()) {
-            process(r);
+            processLikeToCash(r);
+        }
+        for (Resource r : fetchResourcesFromYouLikeCash()) {
+            processYouLikeCash(r);
         }
     }
 
@@ -63,10 +66,27 @@ public class Main {
         return result;
     }
 
-    private static void process(Resource r) throws IOException {
+    private static Collection<Resource> fetchResourcesFromYouLikeCash() throws IOException {
+        System.out.println("Fetching resources from YouLikeCash...");
+        HtmlPage p = browser.getPage("http://youlikecash.com/members/login");
+        Collection<Resource> result = transform(filter(p.getElementsByTagName("div"), Resource.isResource()), Resource.fromDiv());
+        System.out.println("Fetched " + result.size() + " resources from LikeToCash!");
+        return result;
+    }
+
+    private static void processLikeToCash(Resource r) throws IOException {
         try {
             like(r);
-            cashIn(r);
+            cashInLikeToCash(r);
+        } catch (IllegalAccessError e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    private static void processYouLikeCash(Resource r) throws IOException {
+        try {
+            like(r);
+            cashInYouLikeCash(r);
         } catch (IllegalAccessError e) {
             System.out.println(e.getMessage());
         }
@@ -95,10 +115,12 @@ public class Main {
         System.out.println("Liked - " + r.getUrl() + "!");
     }
 
-    private static void cashIn(Resource r) throws IOException {
-        System.out.println("Cashing In - " + r.getUrl() + "...");
+    private static void cashInLikeToCash(Resource r) throws IOException {
         browser.getPage("http://liketocash.com/like/confirm/" + r.getPageId() + "/" + r.getOwnId());
-        System.out.println("Cashed In - " + r.getUrl() + "!");
+    }
+
+    private static void cashInYouLikeCash(Resource r) throws IOException {
+        browser.getPage("http://youlikecash.com/like/confirm/" + r.getPageId() + "/" + r.getOwnId());
     }
 
     private static WebClient initBrowser() {
